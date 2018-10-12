@@ -1,0 +1,49 @@
+---
+- hosts: localhost
+  gather_facts: 'no'
+
+  tasks:
+    - name: Add tower project
+      shell: |
+        tower-cli project create \
+        --name "My Project" \
+        --description "My project description" \
+        --organization "Default" \
+        --scm-type "git" \
+        --scm-url "https://github.com/ansible/ansible-tower-samples"
+
+    - name: Add tower inventory
+      shell: |
+        tower-cli inventory create \
+        --name "My Inventory" \
+        --organization "Default"
+
+    - name: Add host to inventory
+      shell: |
+        tower-cli host create \
+        --name "localhost" \
+        --inventory "My Inventory" \
+        --variables "ansible_connection: local"
+    
+    - name: Add credential
+      shell: |
+        tower-cli credential create \
+        --name "My Credential" \
+        --credential-type "Machine" \
+        --user "admin"
+        
+    - name: wait 15 seconds to pull project SCM content
+      wait_for: timeout=15
+      delegate_to: localhost
+ 
+    - name: Add job template
+      shell: |
+        tower-cli job_template create \
+        --name "My Job Template" \
+        --project "My Project" \
+        --inventory "My Inventory" \
+        --job-type "run" \
+        --credential "My Credential" \
+        --playbook "hello_world.yml" \
+        --verbosity "default"
+
